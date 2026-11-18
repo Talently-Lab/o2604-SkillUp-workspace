@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RolUsuario {
+  Admin
+  Estudiante
+}
+
+enum NivelCurso {
+  Principiante
+  Intermedio
+  Avanzado
+}
+
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  nombre        String   @db.VarChar(100)
+  email         String   @unique @db.VarChar(150)
+  password      String   @db.VarChar(255)
+  rol           RolUsuario @default(Estudiante)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  inscripciones  Inscripcion[]
+  progresoClases ProgresoClase[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique @db.VarChar(80)
+  descripcion String?  @db.VarChar(255)
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  cursos Curso[]
+
+  @@map("categorias")
+}
+
+model Curso {
+  id            Int        @id @default(autoincrement())
+  categoriaId   Int        @map("categoria_id")
+  titulo        String     @db.VarChar(150)
+  descripcion   String     @db.Text
+  resultado     String?    @db.Text
+  nivel         NivelCurso @default(Principiante)
+  instructor    String     @db.VarChar(100)
+  duracion      String     @db.VarChar(50)
+  imagenUrl     String?    @map("imagen_url") @db.VarChar(255)
+  publicado     Boolean    @default(true)
+  creadoEn      DateTime   @default(now()) @map("creado_en")
+  actualizadoEn DateTime   @updatedAt @map("actualizado_en")
+
+  categoria     Categoria     @relation(fields: [categoriaId], references: [id])
+  clases        Clase[]
+  inscripciones Inscripcion[]
+
+  @@index([categoriaId], name: "idx_cursos_categoria_id")
+  @@map("cursos")
+}
+
+model Clase {
+  id          Int      @id @default(autoincrement())
+  cursoId     Int      @map("curso_id")
+  titulo      String   @db.VarChar(150)
+  descripcion String?  @db.Text
+  orden       Int
+  urlRecurso  String   @map("url_recurso") @db.VarChar(255)
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  curso          Curso           @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  progresoClases ProgresoClase[]
+
+  @@unique([cursoId, orden], name: "unique_curso_orden_clase")
+  @@index([cursoId], name: "idx_clases_curso_id")
+  @@map("clases")
+}
+
+model Inscripcion {
+  id               Int      @id @default(autoincrement())
+  usuarioId        Int      @map("usuario_id")
+  cursoId          Int      @map("curso_id")
+  fechaInscripcion DateTime @default(now()) @map("fecha_inscripcion")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  curso   Curso   @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, cursoId], name: "unique_usuario_curso_inscripcion")
+  @@index([usuarioId], name: "idx_inscripciones_usuario_id")
+  @@index([cursoId], name: "idx_inscripciones_curso_id")
+  @@map("inscripciones")
+}
+
+model ProgresoClase {
+  id              Int      @id @default(autoincrement())
+  usuarioId       Int      @map("usuario_id")
+  claseId         Int      @map("clase_id")
+  completada      Boolean  @default(true)
+  fechaCompletado DateTime @default(now()) @map("fecha_completado")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  clase   Clase   @relation(fields: [claseId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, claseId], name: "unique_usuario_clase_progreso")
+  @@index([usuarioId], name: "idx_progreso_usuario_id")
+  @@index([claseId], name: "idx_progreso_clase_id")
+  @@map("progreso_clases")
+}
