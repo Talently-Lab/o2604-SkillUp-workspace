@@ -47,4 +47,16 @@ const create = async ({ name, email, passwordHash, role = 'STUDENT' }) => {
   return result.rows[0];
 };
 
-module.exports = { findByEmail, findById, create };
+/**
+ * Devuelve todos los usuarios sin exponer la contraseña.
+ * Usado por admin.service para el panel de administración.
+ * @returns {Promise<Array<{ id, name, email, role, createdAt }>>}
+ */
+const findAll = async () => {
+  const result = await pool.query(
+    'SELECT id, name, email, role, "createdAt" FROM "User" ORDER BY id ASC'
+  );
+  return result.rows;
+};
+
+module.exports = { findByEmail, findById, create, findAll };
