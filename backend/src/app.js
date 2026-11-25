@@ -3,6 +3,7 @@ const express       = require('express');
 const cors          = require('cors');
 const authRoutes    = require('./routes/auth.routes');
 const coursesRoutes = require('./routes/courses.routes');
+const errorHandler  = require('./middlewares/errorHandler');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -28,6 +29,9 @@ app.get('/', (req, res) => {
 // ── Rutas ─────────────────────────────────────────────────────────────────────
 app.use('/api/auth',    authRoutes);
 app.use('/api/courses', coursesRoutes);
+
+// ── Middleware global de errores (debe ir DESPUÉS de las rutas) ───────────────
+app.use(errorHandler);
 
 // ── Inicio del servidor ───────────────────────────────────────────────────────
 app.listen(PORT, () => {
